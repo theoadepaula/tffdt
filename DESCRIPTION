@@ -18,4 +18,10 @@ BugReports: https://github.com/theoadepaula/tffdt/issues
 Imports: 
     dplyr,
     httr,
-    magrittr
+    lubridate,
+    magrittr,
+    tibble,
+    XML,
+    xml2
+Depends: 
+    R (>= 2.10)
