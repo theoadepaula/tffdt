@@ -1,5 +1,15 @@
 ## code to prepare `historico_total_manaus` dataset goes here
 
+# Para poder utilizar o nível de água, que é a medição de cota,
+# é preciso primeiramente retirar as variáveis que não tem interesse,
+# já que a tabela bruta possui 78 variáveis.
+# Como os dados dos dias estão dispostos em colunas, foi preciso colocar em formato
+# longer para se adequar aos princípios tidy.Depois foram feitas as transformações
+# como colocar em formato datetime e númerico.
+# Depois foi preciso ordenar o banco de dados pelas colunas data_hora e nivel_consistencia
+# para retirar as informações duplicadas, dando preferëncia aos dados de nível consistidos
+# do que os brutos.
+
 historico_total_manaus <-
   historico_bruto_total_manaus %>%
   dplyr::select(-ends_with('Status'),

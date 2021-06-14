@@ -10,7 +10,7 @@
 #' @param cod_estacao Código da Estação Telemétrica
 #' @param data_inicio Data com o formato DD/MM/AAAA
 #' @param data_fim Data com o formato DD/MM/AAAA
-#' @param tipo_dados1-Cotas Digitar 1-Cotas, 2-Chuvas ou 3-Vazões
+#' @param tipo_dados Digitar 1-Cotas, 2-Chuvas ou 3-Vazões
 #' @param nivel_consistencia 1-Bruto ou 2-Consistido
 #'
 #' @return Um tibble com a série histórica.

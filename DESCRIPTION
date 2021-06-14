@@ -5,8 +5,7 @@ Authors@R:
     person(given = "Théo",
            family = "de Paula",
            role = c("aut", "cre"),
-           email = "theoadepaula@gmail.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           email = "theoadepaula@gmail.com")
 Description: Esse pacote foi feito para entregar o trabalho final do curso "Faxina de dados" feito por Théo Albuquerque.
 License: MIT + file LICENSE
 Encoding: UTF-8

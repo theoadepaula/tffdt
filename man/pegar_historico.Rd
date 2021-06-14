@@ -19,9 +19,9 @@ pegar_historico(
 
 \item{data_fim}{Data com o formato DD/MM/AAAA}
 
-\item{nivel_consistencia}{1-Bruto ou 2-Consistido}
+\item{tipo_dados}{Digitar 1-Cotas, 2-Chuvas ou 3-Vazões}
 
-\item{tipo_dados1-Cotas}{Digitar 1-Cotas, 2-Chuvas ou 3-Vazões}
+\item{nivel_consistencia}{1-Bruto ou 2-Consistido}
 }
 \value{
 Um tibble com a série histórica.
