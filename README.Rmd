@@ -1,5 +1,23 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%", 
+  message = FALSE, 
+  warning = FALSE
+  
+)
+library(tidyverse)
+library(lubridate)
+library(plotly)
+```
 
 # tffdt
 
@@ -9,58 +27,30 @@
 
 <!-- badges: end -->
 
-O propósito da criação do pacote é para a entrega final do curso Faxina
-de Dados. O trabalho foi feito em cima de pedido feito por um colega de
-trabalho para acompanhar o nível de água do município de Manaus.
+O propósito da criação do pacote é para a entrega final do curso Faxina de Dados. O trabalho foi feito em cima de pedido feito por um colega de trabalho para acompanhar o nível de água do município de Manaus.
 
-Para a cumprir o objetivo desse trabalho ,foram trabalhados os dados
-telemétricos de uma estação que está instalada no Rio Negro, com o
-código 14990000, que se encontra perto de Manaus. Pelas reportagens
-noticiadas na TV e na internet, podemos observar a preocupação da
-população local com o nível da água, pois não só atrapalha a rotina da
-cidade como existem pessoas perdem roupas, móveis, automóveis e até
-casas.
+Para a cumprir o objetivo desse trabalho ,foram trabalhados os dados telemétricos de uma estação que está instalada no Rio Negro, com o código 14990000, que se encontra perto de Manaus. Pelas reportagens noticiadas na TV e na internet, podemos observar a preocupação da população local com o nível da água, pois não só atrapalha a rotina da cidade como existem pessoas perdem roupas, móveis, automóveis e até casas.
 
 ## Análise dos dados
 
-Os dados foram baixados de dois lugares no site de [dados de telemetria
-da ANA (Agência Nacional de Águas e Saneamento
-Básico)](http://telemetriaws1.ana.gov.br/EstacoesTelemetricas.aspx),
-sendo uma parte dos dados vindos da Série Histórica da Região e outra
-dos dados vindos do ano de 2021.
+Os dados foram baixados de dois lugares no site de [dados de telemetria da ANA (Agência Nacional de Águas e Saneamento Básico)](http://telemetriaws1.ana.gov.br/EstacoesTelemetricas.aspx), sendo uma parte dos dados vindos da Série Histórica da Região e outra dos dados vindos do ano de 2021.
 
 ## Limpeza de dados
 
-Para fazer uma análise adequada, é preciso primeiro fazer uma limpeza
-nos dados baixados/recebidos. As variáveis a serem analisadas é data da
-medição e o nível de água/cota. Abaixo está como foi feito a limpeza das
-duas partes.
+Para fazer uma análise adequada, é preciso primeiro fazer uma limpeza nos dados baixados/recebidos. As variáveis a serem analisadas é data da medição e o nível de água/cota. Abaixo está como foi feito a limpeza das duas partes.
 
 ### Série Histórica
 
-Dentro da Série Histórica, será necessário verificar a medição de cota.
-A tabela bruta possui 78 colunas e é preciso primeiramente retirar as
-variáveis que não tem interesse, já que a tabela bruta possui 78
-variáveis e 2.854 observações. Algumas dessas colunas, como o status da
-estação por dia, a máxima, mínima e média do mês observado, não serão
-interessantes para o que foi proposto, podem portanto, serem retirados
-da tabela final, após a limpeza.
+Dentro da Série Histórica, será necessário verificar a medição de cota. A tabela bruta possui 78 colunas e  é preciso primeiramente retirar as variáveis que não tem interesse, já que a tabela bruta possui 78 variáveis e 2.854 observações. Algumas dessas colunas, como o status da estação por dia, a máxima, mínima e média do mês observado, não serão interessantes para o que foi proposto, podem portanto, serem retirados da tabela final, após a limpeza.
 
-Como os dados dos dias dos meses estão dispostos em colunas, é preciso
-então colocar em formato longer para se adequar aos princípios
-tidy.Depois foram feitas as transformações como colocar a variável
-dataHora em formato datetime e Cota em formato númerico. As variáveis
-citadas foram renomeadas para data\_hora e cota, respectivamente.
+Como os dados dos dias dos meses estão dispostos em colunas, é preciso então colocar em formato longer para se adequar aos princípios tidy.Depois foram feitas as transformações como colocar a variável dataHora em formato datetime e Cota em formato númerico. As variáveis citadas foram renomeadas para data_hora e cota, respectivamente.
 
-Depois foi preciso ordenar o banco de dados pelas colunas data\_hora e
-nivel\_consistencia para retirar as informações duplicadas, dando
-preferëncia aos dados de nível consistidos do que os dados brutos.
+Depois foi preciso ordenar o banco de dados pelas colunas data_hora e nivel_consistencia para retirar as informações duplicadas, dando preferëncia aos dados de nível consistidos do que os dados brutos.
 
 ### Dados telemétricos
 
-Para arrumar os dados, foi preciso transformar todos os dados em branco
-em NA, transformar as variáveis Nivel,Vazao e Chuva em númericos e
-DataHora em datetime.
+Para arrumar os dados, foi preciso transformar todos os dados em branco em NA, transformar as variáveis Nivel,Vazao e Chuva em númericos e DataHora em datetime.
+
 
 ``` r
 install.packages("tffdt")
@@ -72,12 +62,11 @@ And the development version from [GitHub](https://github.com/) with:
 # install.packages("devtools")
 devtools::install_github("theoadepaula/tffdt")
 ```
-
 ## Example
 
 This is a basic example which shows you how to solve a common problem:
 
-``` r
+```{r example_1}
 library(tffdt)
 
 max_min_historica_mensal_manaus <-
@@ -111,9 +100,8 @@ max_min_historica_mensal_manaus %>%
   theme_minimal()
 ```
 
-<img src="man/figures/README-example_1-1.png" width="100%" />
 
-``` r
+```{r example_2}
 max_min_historica_diaria_manaus <-
   historico_total_manaus %>%
   filter(year(data_hora)>1903) %>%
@@ -154,9 +142,8 @@ diaria_historico%>%#filter(tipo=='Mediana') %>%
   theme_minimal()
 ```
 
-<img src="man/figures/README-example_2-1.png" width="100%" />
 
-``` r
+```{r example_3}
 dados_telemetria_2021 <- dados_telemetria_manaus %>%
   filter(year(data_hora)==2021) %>%
   rename(cota=nivel) %>%
@@ -212,11 +199,11 @@ g2021 <- tabela_grafico%>%
 
 
 g2021
+
 ```
 
-<img src="man/figures/README-example_3-1.png" width="100%" />
 
-``` r
+```{r example_4}
 g2021 + 
   coord_cartesian(ylim = c(2980,3010),xlim = c(as_date('2021-05-25'),as_date('2021-06-15')))+
   scale_x_date(date_labels = '%d/%m',date_breaks = '2 days')+
@@ -226,6 +213,6 @@ g2021 +
            ymin = 2997, ymax = 3002.5,  alpha = .1)+
   annotate("text", x = as_date('2021-06-07'), y = 3004.5,
            label='Dias acima do recorde histórico')
+
 ```
 
-<img src="man/figures/README-example_4-1.png" width="100%" />
