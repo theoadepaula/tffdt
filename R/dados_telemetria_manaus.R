@@ -26,3 +26,4 @@
 #' @name dados_brutos_telemetria_manaus
 #' @usage data(dados_brutos_telemetria_manaus)
 #' @format A data frame with 270677 rows and 5 variables
+"dados_telemetria_manaus"
