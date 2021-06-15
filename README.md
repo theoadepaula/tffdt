@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# tffdt
+# Trabalho Final de Faxina de Dados do Théo (tffdt)
 
 <!-- badges: start -->
 
@@ -18,7 +18,7 @@ telemétricos de uma estação que está instalada no Rio Negro, com o
 código 14990000, que se encontra perto de Manaus. Pelas reportagens
 noticiadas na TV e na internet, podemos observar a preocupação da
 população local com o nível da água, pois não só atrapalha a rotina da
-cidade como existem pessoas perdem roupas, móveis, automóveis e até
+cidade como existem pessoas que perdem roupas, móveis, automóveis e até
 casas.
 
 ## Análise dos dados
@@ -56,26 +56,137 @@ Depois foi preciso ordenar o banco de dados pelas colunas data\_hora e
 nivel\_consistencia para retirar as informações duplicadas, dando
 preferëncia aos dados de nível consistidos do que os dados brutos.
 
-### Dados telemétricos
-
-Para arrumar os dados, foi preciso transformar todos os dados em branco
-em NA, transformar as variáveis Nivel,Vazao e Chuva em númericos e
-DataHora em datetime.
+Abaixo está o código para pegar o dado bruto e o dado arrumado.
 
 ``` r
-install.packages("tffdt")
+pegar_historico <- function(cod_estacao,
+                            data_inicio='',
+                            data_fim='',
+                            tipo_dados,
+                            nivel_consistencia) {
+
+  url <- 'http://telemetriaws1.ana.gov.br/ServiceANA.asmx/HidroSerieHistorica?'
+
+  dados_hidro <- GET(url,
+                     query = list(
+                       codEstacao=cod_estacao,
+                       dataInicio=data_inicio,
+                       dataFim= data_fim,
+                       tipoDados=tipo_dados,
+                       nivelConsistencia=nivel_consistencia
+                     ))
+
+  tabela_hidro <- content(dados_hidro,type='text') %>%
+    XML::xmlParse(encoding = 'UTF-8') %>%
+    getNodeSet('//SerieHistorica') %>%
+    xmlToDataFrame() %>%
+    tibble()
+
+}
+
+historico_total_manaus_bruto <-
+  pegar_historico('14990000',tipo_dados = 1, nivel_consistencia = 1)
+
+historico_total_manaus_consistido <-
+  pegar_historico('14990000',tipo_dados = 1, nivel_consistencia = 2)
+
+historico_bruto_total_manaus <-
+  dplyr::bind_rows(historico_total_manaus_bruto,historico_total_manaus_consistido)
+
+usethis::use_data(historico_bruto_total_manaus, overwrite = TRUE)
+
+historico_total_manaus <-
+  historico_bruto_total_manaus %>%
+  dplyr::select(-ends_with('Status'),
+         -DataIns,
+         -EstacaoCodigo,
+         -contains('Maxima'),
+         -contains('Minima'),
+         -contains('Media'),
+         -TipoMedicaoCotas
+  ) %>%
+  tidyr::pivot_longer(starts_with('Cota'),
+               names_to = 'dia_cota' ,
+               values_to = 'nivel_cota') %>%
+  janitor::clean_names() %>%
+  dplyr::mutate(data_hora=lubridate::as_datetime(data_hora),
+         dia_cota=stringr::str_remove(dia_cota,'Cota') %>% as.numeric(),
+         nivel_cota=as.numeric(nivel_cota),
+         data_hora= data_hora + lubridate::days(dia_cota-1),
+         nivel_consistencia=as.numeric(nivel_consistencia)
+  ) %>%
+  dplyr::arrange(data_hora,desc(nivel_consistencia)) %>%
+  dplyr::select(-dia_cota) %>%
+  tidyr::drop_na(nivel_cota) %>%
+  dplyr::distinct(data_hora,.keep_all = TRUE)
 ```
 
-And the development version from [GitHub](https://github.com/) with:
+### Dados telemétricos
+
+Para obter os dados de 2021, foi preciso fazer a função para baixar do
+site. Para arrumar os dados, foi preciso transformar todos os dados em
+branco em NA, transformar as variáveis Nivel,Vazao e Chuva em númericos
+e DataHora em datetime.
+
+``` r
+pegar_dados <- function(nome_estacao,
+                        data_inicio=format(floor_date( Sys.Date(),unit='years'),'%d/%m/%Y'),
+                        data_fim=format(Sys.Date(),'%d/%m/%Y'))
+{
+  url <- 'http://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos?'
+
+  dados_hidro <- GET(url,
+                     query = list(
+                       codEstacao=nome_estacao,
+                       dataInicio=data_inicio,
+                       dataFim= data_fim
+                     ))
+
+  tabela_hidro <- content(dados_hidro,type='text') %>%
+    XML::xmlParse(encoding = 'UTF-8') %>%
+    getNodeSet('//DadosHidrometereologicos') %>%
+    xmlToDataFrame() %>%
+    tibble()
+  
+  dados_brutos_telemetria_manaus <- pegar_dados('14990000')
+
+  dados_brutos_telemetria_manaus %>%
+  janitor::clean_names() %>% # transforma os nomes das colunas
+  dplyr::na_if('')%>% # Substitui o '' por NA
+  dplyr::mutate(dplyr::across(c(nivel,chuva,vazao),as.numeric), # Transforma as variáveis em númericos
+                data_hora = stringr::str_squish(data_hora) %>% # Transforma em datetime
+                  lubridate::as_datetime())
+
+  
+```
+
+Os dados, tanto brutos quanto arrumados, e as funções foram colocados
+nesse pacote, que se chama ‘tffdt’ e está no
+[GitHub](https://github.com/theoadepaula/tffdt). Pode ser baixado pelos
+comandos abaixo:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("theoadepaula/tffdt")
 ```
 
-## Example
+## Análise dos dados arrumados
 
-This is a basic example which shows you how to solve a common problem:
+### Gráfico Mensal
+
+Em uma primeira análise, foi feito um gráfico para observar os valores
+mínimos, medianos e máximos de cada mês, além de acrescentar a linha de
+cota máxima recorde (2997 cm). A série histórica possui valores desde
+1902, e por questão de ver os dados sem influência das primeiras
+coletas, foi descartado esse primeiro ano. Os dados foram agrupados por
+mês, descartados os valores faltantes e mostrados apenas os valores
+pedidos no primeiro parágrafo. Após retorno dos dados solicitados, a
+tabela foi reorganizada para fazer o gráfico, de modo que os tipos de
+valores (Mínima, Mediana, Máxima e Recorde) sejam aparecidos em uma
+coluna e utilizados como grupo de cores no ggplot.
+
+É possível observar que os valores máximos anuais se encontram nos meses
+de maio e junho.
 
 ``` r
 library(tffdt)
@@ -112,6 +223,13 @@ max_min_historica_mensal_manaus %>%
 ```
 
 <img src="man/figures/README-example_1-1.png" width="100%" />
+
+### Gráfico Diário
+
+Esse segundo gráfico é baseado nos dados agrupados por dia e mês. Agora
+podemos ver não um ponto ao longo do mês, mas os pontos no decorrer dos
+dias. Entre a segunda quinzena de maio e a segunda quinzena de junho é
+observado historicamente o período com o maior nível de água na região.
 
 ``` r
 max_min_historica_diaria_manaus <-
@@ -156,6 +274,17 @@ diaria_historico%>%#filter(tipo=='Mediana') %>%
 
 <img src="man/figures/README-example_2-1.png" width="100%" />
 
+Para entendermos como o ano de 2021 está em relação aos dados obtidos no
+gráfico anterior, podemos acrescentar os dados de 2021. Para um melhor
+entendimento do que se passa na região, foram linhas informando os
+níveis de atenção (2700 cm), de alerta (2750 cm) e de inundação (2900
+cm), fornecidos pela Defesa Civil do Estado. Os dados de 2021 são de
+01/01/2021 até 13/06/2021.
+
+Podemos ver que em 2021, o nível de água já ultrapassou o nível de
+inundação e que parece ter ultrapassado até mesmo o recorde histórico da
+região. Vamos dar um zoom no gráfico para ver melhor essa situação.
+
 ``` r
 dados_telemetria_2021 <- dados_telemetria_manaus %>%
   filter(year(data_hora)==2021) %>%
@@ -176,7 +305,6 @@ tabela_grafico <-bind_rows(diaria_historico,dados_telemetria_2021) %>%
   pivot_wider(data,names_from = tipo,values_from = cota,values_fill = NA) %>%
   mutate(Atenção=2700, Alerta=2750, Inundação=2900, Recorde=2997)%>%
   pivot_longer(-data,names_to = 'tipo', values_to = 'cota')
-
 
 g2021 <- tabela_grafico%>%
   ggplot(aes(data,cota,color=tipo,group=tipo,linetype=tipo))+
@@ -216,16 +344,24 @@ g2021
 
 <img src="man/figures/README-example_3-1.png" width="100%" />
 
+Ao fazer o recorte do perído entre 20 de abril a 20 de julho, é possível
+observar que desde o dia 29 de abril o nível de água está acima do nível
+de inundação e que no dia primeiro de junho o nível de água está acima
+do recorde histórico. Até a data informada (13/06/2021), o nível de água
+está em 2999 cm ,acima de 2997 cm (recorde), e apresenta uma tendência
+de queda. Chegou ao máximo nível de água, com 3001 cm, entre os dias 9 a
+11 de junho de 2021.
+
 ``` r
 g2021 + 
-  coord_cartesian(ylim = c(2980,3010),xlim = c(as_date('2021-05-25'),as_date('2021-06-15')))+
-  scale_x_date(date_labels = '%d/%m',date_breaks = '2 days')+
+  coord_cartesian(ylim = c(2900,3020),xlim = c(as_date('2021-04-20'),as_date('2021-06-20')))+
+  scale_x_date(date_labels = '%d/%m',date_breaks = '7 days')+
   geom_vline(xintercept=tabela_grafico %>% filter(cota>2997) %>% slice(1) %>% pull(data),
-             linetype='dashed', color='red')+
+             linetype='dashed', color='#8b0000',size=1.2)+
   annotate("rect", xmin = as_date('2021-06-01'), xmax = as_date('2021-06-13'), 
            ymin = 2997, ymax = 3002.5,  alpha = .1)+
-  annotate("text", x = as_date('2021-06-07'), y = 3004.5,
-           label='Dias acima do recorde histórico')
+  annotate("text", x = as_date('2021-06-10'), y = 3012,
+           label='Dias acima do \nrecorde histórico')
 ```
 
 <img src="man/figures/README-example_4-1.png" width="100%" />
