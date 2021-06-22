@@ -16,7 +16,6 @@ knitr::opts_chunk$set(
 )
 library(tidyverse)
 library(lubridate)
-library(plotly)
 ```
 
 # Trabalho Final de Faxina de Dados do Théo (tffdt)
@@ -272,6 +271,9 @@ tabela_grafico <-bind_rows(diaria_historico,dados_telemetria_2021) %>%
   mutate(Atenção=2700, Alerta=2750, Inundação=2900, Recorde=2997)%>%
   pivot_longer(-data,names_to = 'tipo', values_to = 'cota')
 
+tabela_grafico %>% 
+  filter(data==Sys.Date())
+
 g2021 <- tabela_grafico%>%
   ggplot(aes(data,cota,color=tipo,group=tipo,linetype=tipo))+
   geom_line()+
@@ -309,7 +311,7 @@ g2021
 
 ```
 
-Ao fazer o recorte do perído entre 20 de abril a 20 de julho, é possível observar que desde o dia 29 de abril o nível de água está acima do nível de inundação e que no dia primeiro de junho o nível de água está acima do recorde histórico. Até a data informada (13/06/2021), o nível de água está em 2999 cm ,acima de 2997 cm (recorde), e apresenta uma tendência de queda. Chegou ao máximo nível de água, com 3001 cm, entre os dias 9 a 11 de junho de 2021.
+Ao fazer o recorte do perído entre 20 de abril a 20 de julho, é possível observar que desde o dia 29 de abril o nível de água está acima do nível de inundação e que no dia primeiro de junho o nível de água está acima do recorde histórico. Até a data informada (21/06/2021), o nível de água está em 3001 cm ,acima de 2997 cm (recorde), e apresenta uma tendência de queda. Chegou ao máximo nível de água, com 3004 cm, no dia 16 de junho de 2021.
 
 ```{r example_4}
 g2021 + 
@@ -317,8 +319,8 @@ g2021 +
   scale_x_date(date_labels = '%d/%m',date_breaks = '7 days')+
   geom_vline(xintercept=tabela_grafico %>% filter(cota>2997) %>% slice(1) %>% pull(data),
              linetype='dashed', color='#8b0000',size=1.2)+
-  annotate("rect", xmin = as_date('2021-06-01'), xmax = as_date('2021-06-13'), 
-           ymin = 2997, ymax = 3002.5,  alpha = .1)+
+  annotate("rect", xmin = as_date('2021-06-01'), xmax = as_date('2021-06-21'), 
+           ymin = 2997, ymax = 3004,  alpha = .1)+
   annotate("text", x = as_date('2021-06-10'), y = 3012,
            label='Dias acima do \nrecorde histórico')
 
